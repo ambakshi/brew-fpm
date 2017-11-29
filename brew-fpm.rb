@@ -159,4 +159,4 @@ Options:
   end
 end
 
-Homebrew.pkg
+Homebrew.fpm
