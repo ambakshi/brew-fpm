@@ -21,15 +21,13 @@ installed; 'brew fpm ' doesn't handle this for you automatically. The
 the conventions of OS X installer packages.
 
 Options:
-  --identifier-prefix     set a custom identifier prefix to be prepended
-                          to the built package's identifier, ie. 'org.nagios'
-                          makes a package identifier called 'org.nagios.nrpe'
-  --with-deps             include all the package's dependencies in the built package
-  --without-kegs          exclude package contents at /usr/local/Cellar/packagename
-  --scripts               set the path to custom preinstall and postinstall scripts
     EOS
 
-    abort unpack_usage if ARGV.empty?
+    if ARGV.empty?
+      onoe unpack_usage
+      safe_system "fpm","--help"
+      abort
+    end
     identifier_prefix = if ARGV.include? '--identifier-prefix'
       ARGV.next.chomp(".")
     else
@@ -129,20 +127,23 @@ Options:
       custom_ownership = ARGV.next
        if ['recommended', 'preserve', 'preserve-other'].include? custom_ownership
         found_ownership = true
-        ohai "Setting pkgbuild option --ownership with value #{custom_ownership}"
+        ohai "Setting fpm option --ownership with value #{custom_ownership}"
        else
         opoo "#{custom_ownership} is not a valid value for pkgbuild --ownership option, ignoring"
        end
     end
 
     # Build it
-    pkgfile = "#{name}-#{version}.pkg"
+    pkgfile = "#{name}_#{version}-1.deb"
     ohai "Building package #{pkgfile}"
     args = [
-      "--quiet",
-      "--root", "#{pkg_root}",
-      "--identifier", identifier,
-      "--version", version
+      "-s","dir",
+      "-t","deb",
+      "-n","#{name}",
+      "--version", version,
+      "--iteration", "1",
+      "-f",
+      "-C", "#{staging_root}", "."
     ]
     if found_scripts
       args << "--scripts"
@@ -152,8 +153,8 @@ Options:
       args << "--ownership"
       args << custom_ownership
     end
-    args << "#{pkgfile}"
-    safe_system "pkgbuild", *args
+    #args << "#{pkgfile}"
+    safe_system "fpm", *args
 
     FileUtils.rm_rf pkg_root
   end
