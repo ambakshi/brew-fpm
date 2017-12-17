@@ -15,10 +15,8 @@ module Homebrew extend self
     unpack_usage = <<-EOS
 Usage: brew fpm [--iteration iter] [--rpm] [--deb] [--with-deps] [--without-kegs] formula
 
-Build an OS X installer package from a formula. It must be already
-installed; 'brew fpm ' doesn't handle this for you automatically. The
-'--identifier-prefix' option is strongly recommended in order to follow
-the conventions of OS X installer packages.
+Build an OS native installer package (deb, rpm) from a formula using fpm.
+It must be already installed; 'brew fpm ' doesn't handle this for you automatically.
 
 Options:
     EOS
@@ -31,7 +29,7 @@ Options:
     iteration = if ARGV.include? '--iteration'
         ARGV.next.chomp(".")
     else
-      '0'
+      '1'
     end
     if ARGV.include? '--rpm'
       pkg_type = 'rpm'
@@ -42,6 +40,15 @@ Options:
     else
       pkg_type = 'deb'
     end
+    if pkg_type == 'rpm'
+      if File.exists? '/etc/os-release'
+        elvers = '7'
+      else
+        elvers = '6'
+      end
+    end
+    arch =  pkg_type == 'deb' ? 'amd64' : 'x86_64'
+    extra_args = Array.new
 
     f = Formulary.factory ARGV.last
     # raise FormulaUnspecifiedError if formulae.empty?
@@ -74,7 +81,7 @@ Options:
     pkgs.each do |pkg|
       formula = Formulary.factory(pkg.to_s)
       dep_version = formula.version.to_s
-      iteration = formula.version.to_s if formula.revision != '0' and iteration != '0'
+      #iteration = formula.revision.to_s if formula.revision != '0' and iteration != '0'
       dep_version += "_#{formula.revision}" if formula.revision.to_s != '0'
 
 
@@ -86,7 +93,7 @@ Options:
         dirs = Pathname.new(File.join(HOMEBREW_CELLAR, formula.name, dep_version)).children.select { |c| c.directory? }.collect { |p| p.to_s }
 
 
-        dirs.each {|d| safe_system "rsync", "-av", "--delete", "#{d}", "#{staging_root}/" }
+        dirs.each {|d| safe_system "rsync", "-a", "--delete", "#{d}", "#{staging_root}/" }
 
 
         if File.exists?("#{HOMEBREW_CELLAR}/#{formula.name}/#{dep_version}") and not ARGV.include? '--without-kegs'
@@ -94,15 +101,13 @@ Options:
           ohai "Staging directory #{HOMEBREW_CELLAR}/#{formula.name}/#{dep_version}"
 
           safe_system "mkdir", "-p", "#{staging_root}#{staging_prefix}/#{formula.name}/"
-          safe_system "rsync", "-av", "--delete", "#{HOMEBREW_CELLAR}/#{formula.name}/#{dep_version}", "#{staging_root}#{staging_prefix}/#{formula.name}/"
-          safe_system "find","#{staging_root}#{staging_prefix}/#{formula.name}/"
+          safe_system "rsync", "-a", "--delete", "#{HOMEBREW_CELLAR}/#{formula.name}/#{dep_version}", "#{staging_root}#{staging_prefix}/#{formula.name}/"
+          #safe_system "find","#{staging_root}#{staging_prefix}/#{formula.name}/"
         end
 
       end
 
-      # Write out a LaunchDaemon plist if we have one
       if formula.plist
-        #ohai "Plist found at #{formula.plist_name}, staging for /Library/LaunchDaemons/#{formula.plist_name}.plist"
         launch_daemon_dir = File.join staging_root, "Library", "LaunchDaemons"
         FileUtils.mkdir_p launch_daemon_dir
         fd = File.new(File.join(launch_daemon_dir, "#{formula.plist_name}.plist"), "w")
@@ -147,7 +152,12 @@ Options:
     end
 
     # Build it
-    pkgfile = "#{name}_#{version}-#{iteration}.#{pkg_type}"
+    if pkg_type == 'deb'
+      pkgfile = "#{name}_#{version}-#{iteration}_#{arch}.#{pkg_type}"
+    elsif pkg_type == 'rpm'
+      pkgfile = "#{name}-#{version}-#{iteration}.el#{elvers}.#{arch}.#{pkg_type}"
+      extra_args += ["--rpm-dist","el#{elvers}"]
+    end
     ohai "Building package #{pkgfile}"
     args = [
       "-s","dir",
@@ -156,6 +166,7 @@ Options:
       "--version", version,
       "--iteration", iteration,
       "--prefix", prefix,
+    ] + extra_args + [
       "-f",
       "-C", staging_root, ".#{staging_prefix}"
     ]

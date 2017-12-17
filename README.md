@@ -1,7 +1,8 @@
 # brew-fpm
 
 This tap is based on [timsutton/brew-pkg](https://github.com/timsutton/brew-pkg)
-brew-fpm is a Homebrew external command that builds an OS X installer package from a formula. The formula must first already be installed on the system.
+brew-fpm is a Homebrew external command that builds an OS installer package from a formula using [Jordan Sissel's excellent FPM](https://github.com/jordansissel/fpm)
+The formula must first already be installed on the system via `brew install <pkg>` before you can `brew fpm <package>`.
 
 ## Usage
 
@@ -41,6 +42,12 @@ Then install as any other formula:
 
 You can set any custom fpm argument with the `--fpm-arg` option which is just literally passed through to the `fpm` command.
 For more information refer to `man fpm`.
+
+## Issues
+
+* I've never written any Ruby in my life. This is cobbled together from timsutton/brew-pkg, which does pkg file creating. Since FPM can do this, is it strict necessary?
+* All packages use a prefix of /usr/local, insead of the tradition /usr. Existing OS packages are correctly replaced/updated, but the location isn't what one would expect.
+* To properly build rpm's from an Ubuntu host (or visa versa) you need to do it on a EL host, especially for EL6 where libc version is different. I'm doing it with docker containers locally. So while you can specify --rpm on a Debian host, the package may not come up too healthy :)
 
 ## License
 
