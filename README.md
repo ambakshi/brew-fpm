@@ -2,6 +2,7 @@
 
 This tap is based on [timsutton/brew-pkg](https://github.com/timsutton/brew-pkg)
 brew-fpm is a Homebrew external command that builds an OS installer package from a formula using [Jordan Sissel's excellent FPM](https://github.com/jordansissel/fpm)
+
 The formula must first already be installed on the system via `brew install <pkg>` before you can `brew fpm <package>`.
 
 ## Usage
