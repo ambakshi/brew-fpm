@@ -44,6 +44,22 @@ Then install as any other formula:
 You can set any custom fpm argument with the `--fpm-arg` option which is just literally passed through to the `fpm` command.
 For more information refer to `man fpm`.
 
+## Use docker
+
+The included `Makefile` builds an EL7 image with `linuxbrew`, `brew` and `brew-fpm`
+
+```
+make image
+make run
+make exec
+```
+
+This gives you a persistent `$HOME` inside the container. After the `make exec` you'll be inside the EL7 container. Do a
+`brew install curl` and `brew fpm curl` to get a curl el7 rpm, linked statically. The first time the build will take a
+bit longer, because many low level dependencies (such as `autoconf`, `m4`, etc) are missing. Subsequent packages build
+much faster. Your host directory is mounted to `/host`. Run the `brew fpm` command in that directory to have your packages
+available on the host. You can use this technique to build other containers for EL6, Ubuntu, etc. Patches welcome :)
+
 ## Issues
 
 * I've never written any Ruby in my life. This is cobbled together from timsutton/brew-pkg, which does pkg file creating. Since FPM can do this, is it strict necessary?
