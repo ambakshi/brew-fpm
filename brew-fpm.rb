@@ -58,6 +58,8 @@ Options:
     prefix = "/usr/local"
     staging_prefix = ""
     version = f.version.to_s
+    puts f.inspect
+
     #version += "_#{f.revision}" if f.revision.to_s != '0'
 
     # Make sure it's installed first
@@ -151,18 +153,27 @@ Options:
        end
     end
 
+    if ARGV.include? '--os-dist'
+      os_dist = ARGV.next
+      if pkg_type == 'rpm'
+        extra_args += ["--rpm-dist",os_dist]
+      end
+    end
+
     # Build it
     if pkg_type == 'deb'
       pkgfile = "#{name}_#{version}-#{iteration}_#{arch}.#{pkg_type}"
     elsif pkg_type == 'rpm'
       pkgfile = "#{name}-#{version}-#{iteration}.el#{elvers}.#{arch}.#{pkg_type}"
-      extra_args += ["--rpm-dist","el#{elvers}"]
+      extra_args += ["--rpm-autoreqprov"]
     end
     ohai "Building package #{pkgfile}"
     args = [
       "-s","dir",
       "-t", pkg_type,
       "-n","#{name}",
+      "--description","#{f.desc}",
+      "--url","#{f.homepage}",
       "--version", version,
       "--iteration", iteration,
       "--prefix", prefix,

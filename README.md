@@ -65,6 +65,22 @@ available on the host. You can use this technique to build other containers for 
 * I've never written any Ruby in my life. This is cobbled together from timsutton/brew-pkg, which does pkg file creating. Since FPM can do this, is it strict necessary?
 * All packages use a prefix of /usr/local, insead of the tradition /usr. Existing OS packages are correctly replaced/updated, but the location isn't what one would expect.
 * To properly build rpm's from an Ubuntu host (or visa versa) you need to do it on a EL host, especially for EL6 where libc version is different. I'm doing it with docker containers locally. So while you can specify --rpm on a Debian host, the package may not come up too healthy :)
+* Some elfs reference dynamic libs in ~linuxbrew. Haven't had time to look into it, but you can use `patchelf` to fix these
+```
+ git clone https://github.com/NixOS/patchelf
+ cd patchelf
+ ./configure && make DESTDIR=/tmp/pe install
+ fpm -s dir -t rpm --rpm-dist el7 --rpm-autoreqprov--name patchelf --version 0.9 --iteration 1 -C /tmp/pe usr
+ sudo yum localinstall patchelf*.rpm
+```
+
+For each problematic program fix the rpath in the elf
+```
+ sudo patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 `which spipe`
+ sudo patchelf --replace-needed libcrypto.so.1.0.0 libcrypto.so.10 `which spipe`
+```
+
+Not ideal at all
 
 ## License
 
