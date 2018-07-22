@@ -49,9 +49,7 @@ For more information refer to `man fpm`.
 The included `Makefile` builds an EL7 image with `linuxbrew`, `brew` and `brew-fpm`
 
 ```
-make image
-make run
-make exec
+make
 ```
 
 This gives you a persistent `$HOME` inside the container. After the `make exec` you'll be inside the EL7 container. Do a

@@ -21,9 +21,32 @@ It must be already installed; 'brew fpm ' doesn't handle this for you automatica
 Options:
     EOS
 
-    if ARGV.empty?
-      onoe unpack_usage
+ #    ARGS = { :shell=>'default', :writer=>'chm' } # Setting default values
+ #    UNFLAGGED_ARGS = [ :formula ]              # Bare arguments (no flag)
+ #    next_arg = UNFLAGGED_ARGS.first
+ #    ARGV.each do |arg|
+ #      case arg
+ #      when '-h','--help'      then ARGS[:help]      = true
+ #      when 'create'           then ARGS[:create]    = true
+ #      when '-f','--force'     then ARGS[:force]     = true
+ #      when '-n','--nopreview' then ARGS[:nopreview] = true
+ #      when '-v','--version'   then ARGS[:version]   = true
+ #      when '-s','--shell'     then next_arg = :shell
+ #      when '-w','--writer'    then next_arg = :writer
+ #      when '-o','--output'    then next_arg = :output
+ #      when '-l','--logfile'   then next_arg = :logfile
+ #      else
+ #        if next_arg
+ #          ARGS[next_arg] = arg
+ #          UNFLAGGED_ARGS.delete( next_arg )
+ #        end
+ #        next_arg = UNFLAGGED_ARGS.first
+ #      end
+ #    end
+
+    if ARGS[:help] or ARGV.empty?
       safe_system "fpm","--help"
+      onoe unpack_usage
       abort
     end
     iteration = if ARGV.include? '--iteration'
@@ -39,6 +62,13 @@ Options:
       pkg_type = 'rpm'
     else
       pkg_type = 'deb'
+    end
+    if pkg_type == 'rpm'
+      if File.exists? '/etc/os-release'
+        elvers = '7'
+      else
+        elvers = '6'
+      end
     end
     if pkg_type == 'rpm'
       if File.exists? '/etc/os-release'
@@ -104,7 +134,7 @@ Options:
 
           safe_system "mkdir", "-p", "#{staging_root}#{staging_prefix}/#{formula.name}/"
           safe_system "rsync", "-a", "--delete", "#{HOMEBREW_CELLAR}/#{formula.name}/#{dep_version}", "#{staging_root}#{staging_prefix}/#{formula.name}/"
-          #safe_system "find","#{staging_root}#{staging_prefix}/#{formula.name}/"
+          ##safe_system "find","#{staging_root}#{staging_prefix}/#{formula.name}/"
         end
 
       end
